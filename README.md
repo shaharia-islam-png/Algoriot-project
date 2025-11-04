@@ -51,7 +51,7 @@ whether they have internet or not.
 open index.html
 
 ### here the live demo of website
--  
+-  https://shaharia-islam-png.github.io/Algoriot-project/
 
 -  
 ### Health care HLD design
