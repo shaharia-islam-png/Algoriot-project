@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="bn" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>স্বাস্থ্যসেবা - HealthCare Bangladesh</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-white text-primary font-bangla">
+    <!-- Offline Indicator -->
+    <div id="offlineIndicator" class="offline-indicator">
+        <i class="fas fa-wifi-slash mr-2"></i>
+        <span>অফলাইন মোডে চলছে - Offline Mode Active</span>
+    </div>
+    
+    <!-- Voice Assistant Button -->
+    <div id="voiceAssistant" class="voice-indicator" onclick="toggleVoiceAssistant()">
+        <i class="fas fa-microphone text-2xl"></i>
+    </div>
+    
+    <!-- Welcome Screen (No Login Required) -->
+    <div id="welcomeScreen" class="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div class="w-full max-w-md">
+            <div class="text-center mb-8 fade-in">
+                <div class="inline-flex items-center justify-center w-20 h-20 primary-bg rounded-full mb-4">
+                    <i class="fas fa-heartbeat text-white text-3xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold primary-text">স্বাস্থ্যসেবা</h1>
+                <p class="primary-text mt-2">HealthCare Bangladesh</p>
+                <p class="text-sm primary-text mt-4">গ্রামীণ বাংলাদেশের জন্য তৈরি</p>
+            </div>
+            
+            <div class="space-y-4">
+                <button onclick="startApp()" class="w-full primary-bg text-white py-3 px-4 rounded-lg font-medium hover-opacity focus-ring">
+                    <i class="fas fa-play mr-2"></i>
+                    অ্যাপ শুরু করুন (Start App)
+                </button>
+                
+                <button onclick="showLoginOptions()" class="w-full bg-white border-2 border-primary text-primary py-3 px-4 rounded-lg font-medium hover-opacity focus-ring">
+                    <i class="fas fa-user mr-2"></i>
+                    প্রোফাইল লগইন (Profile Login)
+                </button>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <label class="flex items-center justify-center cursor-pointer">
+                    <input type="checkbox" id="voiceEnabled" class="mr-2" checked>
+                    <span class="text-sm primary-text">ভয়েস সহায়তা সক্ষম করুন</span>
+                </label>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <select id="languageSelect" class="px-4 py-2 border border-primary rounded-lg focus-ring">
+                    <option value="bn">বাংলা (Bangla)</option>
+                    <option value="sylheti">সিলেটি (Sylheti)</option>
+                    <option value="chittagonian">চাটগাঁইয়া (Chattagonian)</option>
+                    <option value="rajshahi">রাজশাহী (Rajshahi)</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <div class="flex items-center justify-center space-x-4">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="largeText" class="mr-2">
+                        <span class="text-sm primary-text">বড় টেক্সট</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="highContrast" class="mr-2">
+                        <span class="text-sm primary-text">হাই কনট্রাস্ট</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="darkMode" class="mr-2">
+                        <span class="text-sm primary-text">ডার্ক মোড</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Login Options Modal -->
+    <div id="loginOptionsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full">
+            <h2 class="text-2xl font-bold primary-text mb-6 text-center">লগইন অপশন</h2>
+            
+            <div class="space-y-4">
+                <button onclick="showBiometricLogin()" class="w-full bg-white border-2 border-primary text-primary py-3 px-4 rounded-lg font-medium hover-opacity focus-ring">
+                    <i class="fas fa-fingerprint mr-2"></i>
+                    বায়োমেট্রিক লগইন (Biometric)
+                </button>
+                
+                <button onclick="showPhoneLogin()" class="w-full bg-white border-2 border-primary text-primary py-3 px-4 rounded-lg font-medium hover-opacity focus-ring">
+                    <i class="fas fa-mobile-alt mr-2"></i>
+                    ফোন নম্বর (Phone Number)
+                </button>
+                
+                <button onclick="showPasswordLogin()" class="w-full bg-white border-2 border-primary text-primary py-3 px-4 rounded-lg font-medium hover-opacity focus-ring">
+                    <i class="fas fa-lock mr-2"></i>
+                    পাসওয়ার্ড (Password)
+                </button>
+            </div>
+            
+            <button onclick="closeModal('loginOptionsModal')" class="block mt-6 primary-text text-center">
+                বাতিল করুন
+            </button>
+        </div>
+    </div>
+    
+    <!-- Biometric Login Modal -->
+    <div id="biometricModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-full">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-24 h-24 primary-bg rounded-full mb-4">
+                    <i class="fas fa-fingerprint text-white text-4xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold primary-text mb-4">বায়োমেট্রিক লগইন</h2>
+                <p class="primary-text mb-6">আঙ্গুলের ছাপ বা মুখ দিয়ে লগইন করুন</p>
+                <button onclick="simulateBiometric()" class="primary-bg text-white py-3 px-6 rounded-lg font-medium hover-opacity focus-ring">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    স্ক্যান করুন
+                </button>
+                <button onclick="closeModal('biometricModal')" class="block mt-4 primary-text">
+                    বাতিল করুন
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Phone Login Modal -->
+    <div id="phoneModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-full">
+            <h2 class="text-2xl font-bold primary-text mb-4">ফোন নম্বর লগইন</h2>
+            <input type="tel" placeholder="আপনার ফোন নম্বর দিন" class="w-full px-4 py-3 border border-primary rounded-lg mb-4 focus-ring">
+            <button onclick="sendOTP()" class="w-full primary-bg text-white py-3 px-4 rounded-lg font-medium hover-opacity focus-ring">
+                OTP পাঠান
+            </button>
+            <button onclick="closeModal('phoneModal')" class="block mt-4 primary-text text-center">
+                বাতিল করুন
+            </button>
+        </div>
+    </div>
+    
+    <!-- Password Login Modal -->
+    <div id="passwordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-full">
+            <h2 class="text-2xl font-bold primary-text mb-4">পাসওয়ার্ড লগইন</h2>
+            <input type="password" placeholder="আপনার পাসওয়ার্ড দিন" class="w-full px-4 py-3 border border-primary rounded-lg mb-4 focus-ring">
+            <button onclick="passwordLogin()" class="w-full primary-bg text-white py-3 px-4 rounded-lg font-medium hover-opacity focus-ring">
+                লগইন করুন
+            </button>
+            <button onclick="closeModal('passwordModal')" class="block mt-4 primary-text text-center">
+                বাতিল করুন
+            </button>
+        </div>
+    </div>
+    
+    <!-- User Profile Setup Modal -->
+    <div id="profileSetupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full max-h-screen overflow-y-auto">
+            <h2 class="text-2xl font-bold primary-text mb-6 text-center">প্রোফাইল সেটআপ</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block primary-text mb-2">বয়স</label>
+                    <select id="ageSelect" class="w-full px-4 py-2 border border-primary rounded-lg focus-ring">
+                        <option value="">বয়স নির্বাচন করুন</option>
+                        <option value="child">শিশু (০-১২ বছর)</option>
+                        <option value="teen">কিশোর (১৩-১৯ বছর)</option>
+                        <option value="adult">প্রাপ্তবয়স্ক (২০-৫৯ বছর)</option>
+                        <option value="elderly">বয়স্ক (৬০+ বছর)</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block primary-text mb-2">লিঙ্গ</label>
+                    <select id="genderSelect" class="w-full px-4 py-2 border border-primary rounded-lg focus-ring">
+                        <option value="">লিঙ্গ নির্বাচন করুন</option>
+                        <option value="male">পুরুষ</option>
+                        <option value="female">নারী</option>
+                        <option value="other">অন্যান্য</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block primary-text mb-2">ধর্ম (ঐচ্ছিক)</label>
+                    <select id="religionSelect" class="w-full px-4 py-2 border border-primary rounded-lg focus-ring">
+                        <option value="">ধর্ম নির্বাচন করুন</option>
+                        <option value="islam">ইসলাম</option>
+                        <option value="hinduism">হিন্দুধর্ম</option>
+                        <option value="buddhism">বৌদ্ধধর্ম</option>
+                        <option value="christianity">খ্রিস্টধর্ম</option>
+                        <option value="other">অন্যান্য</option>
+                        <option value="none">ধর্মহীন</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block primary-text mb-2">স্বাস্থ্য অবস্থা (ঐচ্ছিক)</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="diabetes">
+                            <span>ডায়াবেটিস</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="hypertension">
+                            <span>উচ্চ রক্তচাপ</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="heart">
+                            <span>হৃদরোগ</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" value="asthma">
+                            <span>অ্যাজমা</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block primary-text mb-2">অঞ্চল (ঐচ্ছিক)</label>
+                    <select id="regionSelect" class="w-full px-4 py-2 border border-primary rounded-lg focus-ring">
+                        <option value="">অঞ্চল নির্বাচন করুন</option>
+                        <option value="barishal">বরিশাল</option>
+                        <option value="chattogram">চট্টগ্রাম</option>
+                        <option value="dhaka">ঢাকা</option>
+                        <option value="khulna">খুলনা</option>
+                        <option value="mymensingh">ময়মনসিংহ</option>
+                        <option value="rajshahi">রাজশাহী</option>
+                        <option value="rangpur">রংপুর</option>
+                        <option value="sylhet">সিলেট</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex space-x-3 mt-6">
+                <button onclick="saveProfile()" class="flex-1 primary-bg text-white py-2 px-4 rounded-lg hover-opacity focus-ring">
+                    সংরক্ষণ করুন
+                </button>
+                <button onclick="skipProfile()" class="flex-1 bg-white border-2 border-primary text-primary py-2 px-4 rounded-lg hover-opacity focus-ring">
+                    এড়িয়ে যান
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden min-h-screen bg-white">
+        <!-- Header -->
+        <header class="primary-bg text-white p-4 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-heartbeat text-2xl mr-3"></i>
+                    <div>
+                        <h1 class="text-xl font-bold">স্বাস্থ্যসেবা</h1>
+                        <p class="text-sm opacity-90">আপনার স্বাস্থ্য, আমাদের দায়িত্ব</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="showNotifications()" class="relative">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span class="absolute -top-1 -right-1 bg-white text-primary text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
+                    </button>
+                    <button onclick="showProfile()">
+                        <i class="fas fa-user-circle text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Quick Stats -->
+        <div class="p-4">
+            <div class="bg-white rounded-xl shadow-md p-4 mb-4 border border-primary">
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <div class="text-2xl font-bold primary-text">98/60</div>
+                        <div class="text-xs primary-text">রক্তচাপ</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold primary-text">72</div>
+                        <div class="text-xs primary-text">হৃদস্পন্দন</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-bold primary-text">36.5°C</div>
+                        <div class="text-xs primary-text">তাপমাত্রা</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Health Tip of the Day -->
+            <div class="primary-bg rounded-xl p-4 mb-4 text-white">
+                <div class="flex items-center">
+                    <i class="fas fa-lightbulb text-3xl mr-4"></i>
+                    <div>
+                        <h3 class="font-bold mb-1">আজকের স্বাস্থ্য পরামর্শ</h3>
+                        <p class="text-sm">প্রতিদিন কমপক্ষে ৮ গ্লাস পানি পান করুন। এটি আপনার শরীরকে হাইড্রেটেড রাখতে সাহায্য করে।</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Navigation Grid -->
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="openModule('general')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-heartbeat text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">সাধারণ স্বাস্থ্য</div>
+                    <div class="text-xs primary-text opacity-75">General Health</div>
+                </button>
+                
+                <button onclick="openModule('women')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-female text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">নারী স্বাস্থ্য</div>
+                    <div class="text-xs primary-text opacity-75">Women's Health</div>
+                </button>
+                
+                <button onclick="openModule('men')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-male text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">পুরুষ স্বাস্থ্য</div>
+                    <div class="text-xs primary-text opacity-75">Men's Health</div>
+                </button>
+                
+                <button onclick="openModule('pregnancy')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-baby text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">গর্ভাবস্থা</div>
+                    <div class="text-xs primary-text opacity-75">Pregnancy</div>
+                </button>
+                
+                <button onclick="openModule('elderly')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-user-friends text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">বয়স্ক যত্ন</div>
+                    <div class="text-xs primary-text opacity-75">Elderly Care</div>
+                </button>
+                
+                <button onclick="openModule('child')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-child text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">শিশু স্বাস্থ্য</div>
+                    <div class="text-xs primary-text opacity-75">Child Health</div>
+                </button>
+                
+                <button onclick="openModule('mental')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-brain text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">মানসিক স্বাস্থ্য</div>
+                    <div class="text-xs primary-text opacity-75">Mental Health</div>
+                </button>
+                
+                <button onclick="openModule('chronic')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-notes-medical text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">দীর্ঘস্থায়ী রোগ</div>
+                    <div class="text-xs primary-text opacity-75">Chronic Illness</div>
+                </button>
+                
+                <button onclick="openModule('religion')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-pray text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">ধর্ম ও অনুপ্রেরণা</div>
+                    <div class="text-xs primary-text opacity-75">Religion & Motivation</div>
+                </button>
+                
+                <button onclick="openModule('community')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-users text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">সম্প্রদায়</div>
+                    <div class="text-xs primary-text opacity-75">Community</div>
+                </button>
+                
+                <button onclick="openModule('emergency')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center pulse-animation">
+                    <i class="fas fa-ambulance text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">জরুরি সেবা</div>
+                    <div class="text-xs primary-text opacity-75">Emergency</div>
+                </button>
+                
+                <button onclick="openModule('learning')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-graduation-cap text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">শিক্ষা</div>
+                    <div class="text-xs primary-text opacity-75">Learning</div>
+                </button>
+                
+                <button onclick="openModule('contact')" class="icon-button bg-white border-2 border-primary rounded-xl p-6 text-center">
+                    <i class="fas fa-phone-alt text-3xl primary-text mb-2"></i>
+                    <div class="font-semibold primary-text">যোগাযোগ</div>
+                    <div class="text-xs primary-text opacity-75">Contact</div>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-primary">
+            <div class="grid grid-cols-4 py-2">
+                <button class="flex flex-col items-center py-2 primary-text">
+                    <i class="fas fa-home text-xl mb-1"></i>
+                    <span class="text-xs">হোম</span>
+                </button>
+                <button onclick="openModule('map')" class="flex flex-col items-center py-2 primary-text">
+                    <i class="fas fa-map-marked-alt text-xl mb-1"></i>
+                    <span class="text-xs">মানচিত্র</span>
+                </button>
+                <button onclick="openModule('tracking')" class="flex flex-col items-center py-2 primary-text">
+                    <i class="fas fa-chart-line text-xl mb-1"></i>
+                    <span class="text-xs">ট্র্যাকিং</span>
+                </button>
+                <button onclick="openModule('settings')" class="flex flex-col items-center py-2 primary-text">
+                    <i class="fas fa-cog text-xl mb-1"></i>
+                    <span class="text-xs">সেটিংস</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- Module Views -->
+    <div id="moduleView" class="hidden min-h-screen bg-white">
+        <!-- Module Header -->
+        <header class="primary-bg text-white p-4 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <button onclick="backToDashboard()" class="mr-3">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </button>
+                    <h1 id="moduleTitle" class="text-xl font-bold">Module Title</h1>
+                </div>
+                <button onclick="toggleVoiceForModule()">
+                    <i class="fas fa-volume-up text-xl"></i>
+                </button>
+            </div>
+        </header>
+        
+        <!-- Module Content -->
+        <div id="moduleContent" class="p-4">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden min-h-screen bg-white">
+        <header class="primary-bg text-white p-4 shadow-lg">
+            <div class="flex items-center">
+                <button onclick="backToDashboard()" class="mr-3">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </button>
+                <h1 class="text-xl font-bold">সেটিংস</h1>
+            </div>
+        </header>
+        
+        <div class="p-4 space-y-4">
+            <!-- Accessibility Settings -->
+            <div class="bg-white rounded-xl p-4 shadow-md border border-primary">
+                <h2 class="font-bold text-lg primary-text mb-3">অ্যাক্সেসিবিলিটি</h2>
+                <div class="space-y-3">
+                    <label class="flex items-center justify-between">
+                        <span>ভয়েস সহায়তা</span>
+                        <input type="checkbox" id="voiceToggle" class="toggle" checked>
+                    </label>
+                    <label class="flex items-center justify-between">
+                        <span>বড় টেক্সট</span>
+                        <input type="checkbox" id="largeText" class="toggle">
+                    </label>
+                    <label class="flex items-center justify-between">
+                        <span>হাই কনট্রাস্ট</span>
+                        <input type="checkbox" id="highContrast" class="toggle">
+                    </label>
+                    <label class="flex items-center justify-between">
+                        <span>ভাইব্রেশন</span>
+                        <input type="checkbox" id="vibration" class="toggle" checked>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Language Settings -->
+            <div class="bg-white rounded-xl p-4 shadow-md border border-primary">
+                <h2 class="font-bold text-lg primary-text mb-3">ভাষা</h2>
+                <select class="w-full px-4 py-2 border border-primary rounded-lg focus-ring">
+                    <option value="bn">বাংলা (Bangla)</option>
+                    <option value="sylheti">সিলেটি (Sylheti)</option>
+                    <option value="chattagonian">চাটগাঁইয়া (Chattagonian)</option>
+                    <option value="rajshahi">রাজশাহী (Rajshahi)</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <!-- Privacy Settings -->
+            <div class="bg-white rounded-xl p-4 shadow-md border border-primary">
+                <h2 class="font-bold text-lg primary-text mb-3">গোপনীয়তা</h2>
+                <div class="space-y-3">
+                    <label class="flex items-center justify-between">
+                        <span>বেনামী মোড</span>
+                        <input type="checkbox" id="anonymousMode" class="toggle" checked>
+                    </label>
+                    <label class="flex items-center justify-between">
+                        <span>ডেটা শেয়ারিং</span>
+                        <input type="checkbox" id="dataSharing" class="toggle">
+                    </label>
+                    <button onclick="showDataSharingOptions()" class="w-full primary-bg text-white py-2 px-4 rounded-lg mt-2 hover-opacity focus-ring">
+                        ডেটা শেয়ারিং অপশন
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Profile Settings -->
+            <div class="bg-white rounded-xl p-4 shadow-md border border-primary">
+                <h2 class="font-bold text-lg primary-text mb-3">প্রোফাইল</h2>
+                <div class="space-y-3">
+                    <button onclick="showProfileSetup()" class="w-full bg-white border-2 border-primary text-primary py-2 px-4 rounded-lg hover-opacity focus-ring">
+                        প্রোফাইল আপডেট করুন
+                    </button>
+                    <button onclick="showLoginOptions()" class="w-full bg-white border-2 border-primary text-primary py-2 px-4 rounded-lg hover-opacity focus-ring">
+                        লগইন করুন
+                    </button>
+                    <button onclick="logout()" class="w-full bg-white border-2 border-primary text-primary py-2 px-4 rounded-lg hover-opacity focus-ring">
+                        লগআউট করুন
+                    </button>
+                </div>
+            </div>
+            
+            <!-- About -->
+            <div class="bg-white rounded-xl p-4 shadow-md border border-primary">
+                <h2 class="font-bold text-lg primary-text mb-3">সম্পর্কে</h2>
+                <p class="text-sm primary-text">স্বাস্থ্যসেবা ভার্সন 1.0.0</p>
+                <p class="text-sm primary-text">গ্রামীণ বাংলাদেশের জন্য তৈরি</p>
+                <p class="text-sm primary-text">অফলাইন মোড সমর্থিত</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Data Sharing Modal -->
+    <div id="dataSharingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full">
+            <h2 class="text-2xl font-bold primary-text mb-4">ডেটা শেয়ারিং অপশন</h2>
+            <div class="space-y-3 mb-6">
+                <label class="flex items-center">
+                    <input type="checkbox" class="mr-3">
+                    <span>স্বাস্থ্য স্বেচ্ছাসেবকদের সাথে শেয়ার করুন</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="mr-3">
+                    <span>স্বাস্থ্য সংস্থার সাথে শেয়ার করুন</span>
+                </label>
+                <label class="flex items-center">
+                    <input type="checkbox" class="mr-3">
+                    <span>গবেষণার জন্য বেনামী ডেটা শেয়ার করুন</span>
+                </label>
+            </div>
+            <div class="flex space-x-3">
+                <button onclick="saveDataSharingSettings()" class="flex-1 primary-bg text-white py-2 px-4 rounded-lg hover-opacity focus-ring">
+                    সংরক্ষণ করুন
+                </button>
+                <button onclick="closeModal('dataSharingModal')" class="flex-1 bg-white border-2 border-primary text-primary py-2 px-4 rounded-lg hover-opacity focus-ring">
+                    বাতিল করুন
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Community Module -->
+    <div id="communityModule" class="hidden min-h-screen bg-white">
+        <header class="primary-bg text-white p-4 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <button onclick="backToDashboard()" class="mr-3">
+                        <i class="fas fa-arrow-left text-xl"></i>
+                    </button>
+                    <h1 class="text-xl font-bold">সম্প্রদায়</h1>
+                </div>
+                <button onclick="toggleVoiceForModule()">
+                    <i class="fas fa-volume-up text-xl"></i>
+                </button>
+            </div>
+        </header>
+        
+        <div class="p-4">
+            <!-- Create Post Section -->
+            <div class="bg-white rounded-xl p-4 shadow-md border border-primary mb-4">
+                <h2 class="font-bold text-lg primary-text mb-3">নতুন পোস্ট করুন</h2>
+                <textarea placeholder="আপনার স্বাস্থ্য সম্পর্কিত প্রশ্ন বা অভিজ্ঞতা শেয়ার করুন..." class="w-full px-3 py-2 border border-primary rounded-lg mb-3 focus-ring" rows="3"></textarea>
+                <div class="flex items-center justify-between">
+                    <div class="flex space-x-2">
+                        <button class="p-2 border border-primary rounded-lg hover-opacity focus-ring">
+                            <i class="fas fa-microphone primary-text"></i>
+                        </button>
+                        <button class="p-2 border border-primary rounded-lg hover-opacity focus-ring">
+                            <i class="fas fa-camera primary-text"></i>
+                        </button>
+                        <button class="p-2 border border-primary rounded-lg hover-opacity focus-ring">
+                            <i class="fas fa-map-marker-alt primary-text"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-2" checked>
+                            <span class="text-sm primary-text">বেনামী</span>
+                        </label>
+                        <button class="primary-bg text-white py-2 px-4 rounded-lg hover-opacity focus-ring">
+                            পোস্ট করুন
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="bg-white rounded-xl p-3 shadow-md border border-primary mb-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex space-x-2">
+                        <button class="px-3 py-1 primary-bg text-white rounded-lg text-sm hover-opacity focus-ring">সব</button>
+                        <button class="px-3 py-1 bg-white border border-primary text-primary rounded-lg text-sm hover-opacity focus-ring">প্রশ্ন</button>
+                        <button class="px-3 py-1 bg-white border border-primary text-primary rounded-lg text-sm hover-opacity focus-ring">অভিজ্ঞতা</button>
+                        <button class="px-3 py-1 bg-white border border-primary text-primary rounded-lg text-sm hover-opacity focus-ring">টিপস</button>
+                    </div>
+                    <select class="px-3 py-1 border border-primary rounded-lg text-sm focus-ring">
+                        <option>নিকটবর্তী</option>
+                        <option>সাম্প্রতিক</option>
+                        <option>জনপ্রিয়</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Posts Feed -->
+            <div class="space-y-4">
+                <!-- Post 1 -->
+                <div class="bg-white rounded-xl p-4 shadow-md border border-primary community-post">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 primary-bg rounded-full flex items-center justify-center text-white mr-3">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center">
+                                    <p class="font-semibold primary-text">বেনামী ব্যবহারকারী</p>
+                                    <span class="verified-badge ml-2">স্বেচ্ছাসেবক</span>
+                                </div>
+                                <p class="text-xs primary-text opacity-75">ঢাকা বিভাগ • ২ ঘন্টা আগে</p>
+                            </div>
+                        </div>
+                        <button class="text-primary">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <p class="primary-text mb-3">ডায়াবেটিস নিয়ন্ত্রণে রাখার জন্য কোন ঘরোয়া উপায় আছে কি? আমার বাবার রক্তের শর্করা অনেক বেড়ে যাচ্ছে।</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex space-x-4">
+                            <button class="flex items-center primary-text">
+                                <i class="far fa-thumbs-up mr-1"></i>
+                                <span class="text-sm">১২</span>
+                            </button>
+                            <button class="flex items-center primary-text">
+                                <i class="far fa-comment mr-1"></i>
+                                <span class="text-sm">৫</span>
+                            </button>
+                            <button class="flex items-center primary-text">
+                                <i class="far fa-share mr-1"></i>
+                                <span class="text-sm">শেয়ার</span>
+                            </button>
+                        </div>
+                        <button class="text-primary text-sm">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            সাহায্যকারী
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Post 2 -->
+                <div class="bg-white rounded-xl p-4 shadow-md border border-primary community-post">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 primary-bg rounded-full flex items-center justify-center text-white mr-3">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold primary-text">সুমি</p>
+                                <p class="text-xs primary-text opacity-75">রাজশাহী বিভাগ • ৫ ঘন্টা আগে</p>
+                            </div>
+                        </div>
+                        <button class="text-primary">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <p class="primary-text mb-3">গর্ভাবস্থায় পুষ্টিকর খাবারের তালিকা শেয়ার করলাম যা আমার অনেক উপকার করেছে। নিয়মিত এগুলো খেলে শিশুর স্বাস্থ্য ভালো থাকে এবং মায়েরও শক্তি থাকে।</p>
+                    <div class="bg-gray-50 p-3 rounded-lg mb-3">
+                        <p class="font-semibold primary-text mb-2">পুষ্টিকর খাবার তালিকা:</p>
+                        <ul class="list-disc list-inside primary-text text-sm">
+                            <li>ডিম (প্রতিদিন ১টি)</li>
+                            <li>দুধ (প্রতিদিন ২ গ্লাস)</li>
+                            <li>সবুজ শাকসবজি</li>
+                            <li>ফলমূল (অন্তত ২ প্রকার)</li>
+                            <li>শুকনা ফল (বাদাম, কাজু)</li>
+                        </ul>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex space-x-4">
+                            <button class="flex items-center primary-text">
+                                <i class="far fa-thumbs-up mr-1"></i>
+                                <span class="text-sm">২৪</span>
+                            </button>
+                            <button class="flex items-center primary-text">
+                                <i class="far fa-comment mr-1"></i>
+                                <span class="text-sm">৮</span>
+                            </button>
+                            <button class="flex items-center primary-text">
+                                <i class="far fa-share mr-1"></i>
+                                <span class="text-sm">শেয়ার</span>
+                            </button>
+                        </div>
+                        <button class="text-primary text-sm">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            সাহায্যকারী
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Post 3 -->
+                <div class="bg-white rounded-xl p-4 shadow-md border border-primary community-post">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 primary-bg rounded-full flex items-center justify-center text-white mr-3">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center">
+                                    <p class="font-semibold primary-text">বেনামী ব্যবহারকারী</p>
+                                    <span class="verified-badge ml-2">স্বেচ্ছাসেবক</span>
+                                </div>
+                                <p class="text-xs primary-text opacity-75">চট্টগ্রাম বিভাগ • ১ দিন আগে</p>
+                            </div>
+                        </div>
+                        <button class="text-primary">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <p class="primary-text mb-3">ডেঙ্গু প্রতিরোধে করণীয়:</p>
+                    <div class="bg-gray-50 p-3 rounded-lg mb-3">
+                        <ul class="list-disc list-inside primary-text text-sm">
+                            <li>পানি জমতে দেবেন না</li>
+                            <li>মশারি ব্যবহার করুন</li>
+                            <li>পূর্ণ হাতা জামা পরুন</li>
+                            <li>মশার প্রতিরোধক স্প্রে ব্যবহার করুন</li>
+                        </ul>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex space-x-4">
+                            <button class="flex items-center primary-text">
+                                <i class="far fa-thumbs-up mr-1"></i>
+                                <span class="text-sm">৩৫</span>
+                            </button>
+                            <button class="flex items-center primary-text">
+                                <i class="far fa-comment mr-1"></i>
+                                <span class="text-sm">১২</span>
+                            </button>
+                            <button class="flex items-center primary-text">
+                                <i class="far fa-share mr-1"></i>
+                                <span class="text-sm">শেয়ার</span>
+                            </button>
+                        </div>
+                        <button class="text-primary text-sm">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            সাহায্যকারী
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
